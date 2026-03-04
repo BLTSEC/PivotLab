@@ -26,6 +26,9 @@ This range is intended to be an exercise for cybersecurity professionals to gain
   <ol>
     <li>
       <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#network-diagram">Network Diagram</a></li>
+      </ul>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
@@ -55,7 +58,42 @@ Broadly speaking, this lab includes the use of three different types of tools:
 
 The lab consists of three jump boxes with different web servers, and two "target" machines for exploitation.  All of the machines except for one of the targets is Debian-based.  The three web servers include a Tomcat server for jsp webshells, an Apache server for php webshells, and an nginx server.  All of the machines can be administered through the SSH key provided on the kali attack box as the root user, including the two "target" machines.
 
+### Network Diagram
 
+The jump boxes are **dual-homed** -- they have a NIC on VLAN 20 (attacker network) and a second NIC on VLAN 22 (target network). The Kali attack box can only reach VLAN 20. To reach the targets on VLAN 22, you must pivot through one or more jump boxes.
+
+```
+                         VLAN 20                                      VLAN 22
+                   (Attacker Network)                            (Target Network)
+                    10.X.20.0/24                                  10.X.22.0/24
+
+  ┌──────────────┐                    ┌──────────────────┐
+  │     Kali     │                    │   lamp (Apache)  │
+  │  Attack Box  │   10.X.20.220     │                  │  10.X.22.220
+  │ 10.X.20.201  ├───────────────────►│ eth0        eth1 ├──────────┐
+  │              │                    │  PHP webshells   │          │
+  └──────┬───────┘                    └──────────────────┘          │
+         │                                                          │    ┌──────────────────┐
+         │                            ┌──────────────────┐          ├───►│   Linux Target   │
+         │           10.X.20.221      │  nginx (Nginx)   │          │    │   10.X.22.50     │
+         ├───────────────────────────►│                  │  10.X.22.221   │                  │
+         │                            │ eth0        eth1 ├──────────┤    │ CVE-2024-47176   │
+         │                            │                  │          │    │ CVE-2025-32433   │
+         │                            └──────────────────┘          │    └──────────────────┘
+         │                                                          │
+         │                            ┌──────────────────┐          │    ┌──────────────────┐
+         │           10.X.20.222      │  tom (Tomcat)    │          │    │  Windows Target  │
+         └───────────────────────────►│                  │  10.X.22.222   │   10.X.22.60     │
+                                      │ eth0        eth1 ├──────────┘    │                  │
+                                      │  JSP webshells   │               │ CVE-2022-3229    │
+                                      └──────────────────┘               └──────────────────┘
+
+  Firewall Rules:
+    - Kali (VLAN 20) CANNOT reach VLAN 22 directly (inter-VLAN default: REJECT)
+    - Jump boxes (.220-.222) CAN reach VLAN 22 (allowed by firewall rule)
+    - Targets on VLAN 22 CAN respond to jump boxes
+    - All VMs have WireGuard and internet access
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -83,6 +121,7 @@ This guide assumes the user already has Promox and Ludus installed.  If Ludus is
    ludus ansible role add -d roles/tomcat/
    ludus ansible role add -d roles/windows_target/
    ludus ansible role add -d roles/ludus_vulhub/
+   ludus ansible role add -d roles/dual_home/
    ```
 
 3. Import the range config file

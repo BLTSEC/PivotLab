@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  author: PivotLab
+  description: Add a second NIC to make VMs dual-homed across VLANs in Ludus
+  license: MIT
+  min_ansible_version: "2.10"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - bullseye

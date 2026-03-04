@@ -22,6 +22,9 @@ ludus:
     roles:
       - lamp
       - fvarovillodres.lamp
+      - dual_home
+    role_vars:
+      dual_home_vlan: 22
     unmanaged: false
   - vm_name: "{{ range_id }}-nginx"
     hostname: "nginx"
@@ -34,6 +37,9 @@ ludus:
     linux: true
     roles:
       - nginx
+      - dual_home
+    role_vars:
+      dual_home_vlan: 22
     unmanaged: false
   - vm_name: "{{ range_id }}-tom"
     hostname: "tom"
@@ -47,6 +53,9 @@ ludus:
     roles:
       - tom
       - tomcat
+      - dual_home
+    role_vars:
+      dual_home_vlan: 22
     unmanaged: false
   - vm_name: "{{ range_id }}-linux"
     hostname: "linux"
