@@ -107,7 +107,7 @@ This guide assumes the user already has Promox and Ludus installed.  If Ludus is
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/CleverNamesTaken/PivotLab.git
+   git clone https://github.com/BLTSEC/PivotLab.git
    ```
 2. Add the necessary roles
    ```sh
@@ -123,6 +123,7 @@ This guide assumes the user already has Promox and Ludus installed.  If Ludus is
    ludus ansible role add -d roles/ludus_vulhub/
    ludus ansible role add -d roles/dual_home/
    ```
+   > **Note:** The `dual_home` role is bundled locally in this repo. If you're building your own range and want dual-homing, you can install it standalone with `ludus ansible role add BLTSEC.ludus_dual_home`. See [ludus_dual_home](https://github.com/BLTSEC/ludus_dual_home) for details.
 
 3. Import the range config file
    ```sh
