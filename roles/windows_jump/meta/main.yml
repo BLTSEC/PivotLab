@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  author: BLTSEC
+  description: Windows jump box with Responder/LLMNR poisoning initial access
+  license: MIT
+  min_ansible_version: 2.1
+  platforms:
+    - name: Windows
+      versions:
+        - all
+  galaxy_tags:
+    - windows
+    - pivotlab
+    - security
+
+dependencies: []

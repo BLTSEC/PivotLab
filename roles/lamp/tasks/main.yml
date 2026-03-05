@@ -10,6 +10,15 @@
     user: "root"
     state: present
     key: "{{ lookup('file', '/tmp/kali_id_rsa.pub') }}"
+- name: Create webadmin user for brute force exercise
+  ansible.builtin.user:
+    name: webadmin
+    password: "{{ 'shadow' | password_hash('sha512') }}"
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+    state: present
+
 - name: Install utilities
   ansible.builtin.package:
     name: 

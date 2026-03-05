@@ -13,7 +13,7 @@
 <h3 align="center">PivotLab</h3>
 
   <p align="center">
-This range is intended to be an exercise for cybersecurity professionals to gain exposure to pivoting tools and tradecraft.  There are many other tools out there, and this is surely just hitting some of the wavetops for some of the most popular tools.
+A Ludus range for practicing pivoting, lateral movement, and initial access techniques. Originally created by <a href="https://github.com/CleverNamesTaken/PivotLab">CleverNamesTaken</a>, this fork extends the lab with a dual-homed network topology, a Windows jump box with Responder/LLMNR poisoning for initial access, and additional exploitation scenarios.
 </p>
 
 </div>
@@ -56,7 +56,7 @@ Broadly speaking, this lab includes the use of three different types of tools:
 - non-native binaries
 - webshells
 
-The lab consists of three jump boxes with different web servers, and two "target" machines for exploitation.  All of the machines except for one of the targets is Debian-based.  The three web servers include a Tomcat server for jsp webshells, an Apache server for php webshells, and an nginx server.  All of the machines can be administered through the SSH key provided on the kali attack box as the root user, including the two "target" machines.
+The lab consists of three dual-homed jump boxes and two target machines across two network segments. The jump boxes include a Tomcat server for JSP webshells, an Apache server for PHP webshells, and a Windows Server running IIS (for ASPX webshells) with a Responder/LLMNR poisoning bait. The Kali attack box can only reach the jump boxes on VLAN 20 — to reach the targets on VLAN 22, you must pivot through the jump boxes. Linux machines can be administered via the SSH key on the Kali box. The Windows jump box has a weak service account (`svc_backup`/`butterfly`) that broadcasts LLMNR traffic for hash capture with Responder.
 
 ### Network Diagram
 
@@ -75,11 +75,12 @@ The jump boxes are **dual-homed** -- they have a NIC on VLAN 20 (attacker networ
   └──────┬───────┘                    └──────────────────┘          │
          │                                                          │    ┌──────────────────┐
          │                            ┌──────────────────┐          ├───►│   Linux Target   │
-         │           10.X.20.221      │  nginx (Nginx)   │          │    │   10.X.22.50     │
-         ├───────────────────────────►│                  │  10.X.22.221  │                  │
-         │                            │ eth0        eth1 ├──────────┤    │ CVE-2024-47176   │
-         │                            │                  │          │    │ CVE-2025-32433   │
-         │                            └──────────────────┘          │    └──────────────────┘
+         │           10.X.20.221      │  windows-jump    │          │    │   10.X.22.50     │
+         ├───────────────────────────►│  (IIS/WinRM)     │  10.X.22.221  │                  │
+         │                            │ nic0        nic1 ├──────────┤    │ CVE-2024-47176   │
+         │                            │  ASPX webshells  │          │    │ CVE-2025-32433   │
+         │                            │  LLMNR/Responder │          │    └──────────────────┘
+         │                            └──────────────────┘          │
          │                                                          │
          │                            ┌──────────────────┐          │    ┌──────────────────┐
          │           10.X.20.222      │  tom (Tomcat)    │          │    │  Windows Target  │
@@ -116,9 +117,9 @@ This guide assumes the user already has Promox and Ludus installed.  If Ludus is
    ludus ansible role add -d roles/fvarovillodres.lamp/
    ludus ansible role add -d roles/lamp/
    ludus ansible role add -d roles/linux_target/
-   ludus ansible role add -d roles/nginx/
    ludus ansible role add -d roles/tom/
    ludus ansible role add -d roles/tomcat/
+   ludus ansible role add -d roles/windows_jump/
    ludus ansible role add -d roles/windows_target/
    ludus ansible role add -d roles/ludus_vulhub/
    ludus ansible role add -d roles/dual_home/
@@ -180,8 +181,8 @@ Don't forget to give the project a star! Thanks again!
 
 ### Top contributors:
 
-<a href="https://github.com/CleverNamesTaken/PivotLab/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=CleverNamesTaken/PivotLab" alt="contrib.rocks image" />
+<a href="https://github.com/BLTSEC/PivotLab/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=BLTSEC/PivotLab" alt="contrib.rocks image" />
 </a>
 
 
@@ -189,7 +190,7 @@ Don't forget to give the project a star! Thanks again!
 <!-- LICENSE -->
 ## License
 
-Distributed under the Apache License. See `LICENSE.txt` for more information.
+Distributed under the Apache License 2.0. See `LICENSE` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -198,7 +199,9 @@ Distributed under the Apache License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Project Link: [https://github.com/CleverNamesTaken/PivotLab](https://github.com/CleverNamesTaken/PivotLab)
+Project Link: [https://github.com/BLTSEC/PivotLab](https://github.com/BLTSEC/PivotLab)
+
+Original Project: [https://github.com/CleverNamesTaken/PivotLab](https://github.com/CleverNamesTaken/PivotLab)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -207,7 +210,8 @@ Project Link: [https://github.com/CleverNamesTaken/PivotLab](https://github.com/
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-* [Erik (Bad Sector Labs)](https://gitlab.com/badsectorlabs) for all the amazing work on Ludus.
+* [CleverNamesTaken](https://github.com/CleverNamesTaken/PivotLab) for creating the original PivotLab
+* [Erik (Bad Sector Labs)](https://gitlab.com/badsectorlabs) for all the amazing work on Ludus
 * opsdisk and the incredible [Cyber Plumber's Handbook](https://github.com/opsdisk/the_cyber_plumbers_handbook)
 * fvarovillodres for his development of the [ansible-role for installing a LAMP stack](https://github.com/fvarovillodres/ansible-role-lamp)
 
@@ -215,13 +219,13 @@ Project Link: [https://github.com/CleverNamesTaken/PivotLab](https://github.com/
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-[contributors-shield]: https://img.shields.io/github/contributors/CleverNamesTaken/PivotLab.svg?style=for-the-badge
-[contributors-url]: https://github.com/CleverNamesTaken/PivotLab/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/CleverNamesTaken/PivotLab.svg?style=for-the-badge
-[forks-url]: https://github.com/CleverNamesTaken/PivotLab/network/members
-[stars-shield]: https://img.shields.io/github/stars/CleverNamesTaken/PivotLab.svg?style=for-the-badge
-[stars-url]: https://github.com/CleverNamesTaken/PivotLab/stargazers
-[issues-shield]: https://img.shields.io/github/issues/CleverNamesTaken/PivotLab.svg?style=for-the-badge
-[issues-url]: https://github.com/CleverNamesTaken/PivotLab/issues
-[license-shield]: https://img.shields.io/github/license/CleverNamesTaken/PivotLab.svg?style=for-the-badge
-[license-url]: https://github.com/CleverNamesTaken/PivotLab/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/BLTSEC/PivotLab.svg?style=for-the-badge
+[contributors-url]: https://github.com/BLTSEC/PivotLab/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/BLTSEC/PivotLab.svg?style=for-the-badge
+[forks-url]: https://github.com/BLTSEC/PivotLab/network/members
+[stars-shield]: https://img.shields.io/github/stars/BLTSEC/PivotLab.svg?style=for-the-badge
+[stars-url]: https://github.com/BLTSEC/PivotLab/stargazers
+[issues-shield]: https://img.shields.io/github/issues/BLTSEC/PivotLab.svg?style=for-the-badge
+[issues-url]: https://github.com/BLTSEC/PivotLab/issues
+[license-shield]: https://img.shields.io/github/license/BLTSEC/PivotLab.svg?style=for-the-badge
+[license-url]: https://github.com/BLTSEC/PivotLab/blob/master/LICENSE

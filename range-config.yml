@@ -26,17 +26,17 @@ ludus:
     role_vars:
       dual_home_vlan: 22
     unmanaged: false
-  - vm_name: "{{ range_id }}-nginx"
-    hostname: "nginx"
-    template: debian-12-x64-server-template
+  - vm_name: "{{ range_id }}-windows-jump"
+    hostname: "{{ range_id }}-windows-jump"
+    template: win2019-server-x64-template
     vlan: 20
     ip_last_octet: 221
-    force_ip: false
     ram_gb: 8
     cpus: 4
-    linux: true
+    windows:
+      sysprep: false
     roles:
-      - nginx
+      - windows_jump
       - dual_home
     role_vars:
       dual_home_vlan: 22
@@ -100,7 +100,7 @@ network:
   rules:
     - name: Allow jump boxes to access targets VLAN
       vlan_src: 20
-      ip_last_octet_src: 220-222  # only lamp, nginx, tom
+      ip_last_octet_src: 220-222  # lamp, windows-jump, tom
       vlan_dst: 22
       protocol: all
       ports: all
@@ -110,7 +110,7 @@ network:
     - name: Allow targets to respond to jump boxes
       vlan_src: 22
       vlan_dst: 20
-      ip_last_octet_dst: 220-222  # only lamp, nginx, tom
+      ip_last_octet_dst: 220-222  # lamp, windows-jump, tom
       protocol: all
       ports: all
       action: ACCEPT

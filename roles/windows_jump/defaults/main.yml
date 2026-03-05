@@ -1,0 +1,5 @@
+---
+responder_user: svc_backup
+responder_password: butterfly
+responder_target_share: "\\\\FILESRV\\backup"
+responder_interval_minutes: 3

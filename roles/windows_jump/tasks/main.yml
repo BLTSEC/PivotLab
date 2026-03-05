@@ -1,0 +1,74 @@
+---
+# Windows jump box role — provides Responder/LLMNR poisoning initial access
+
+# --- OpenSSH (reuse pattern from windows_target) ---
+- name: Install OpenSSH via Chocolatey
+  chocolatey.chocolatey.win_chocolatey:
+    name: openssh
+    package_params: /SSHServerFeature
+    state: present
+
+# --- IIS for ASPX webshell pivoting (suo5, etc.) ---
+- name: Install IIS web server
+  ansible.windows.win_feature:
+    name:
+      - Web-Server
+      - Web-Asp-Net45
+    state: present
+    include_management_tools: yes
+
+# --- Disable password complexity (same approach as Ludus DC config) ---
+- name: Disable password complexity
+  community.windows.win_security_policy:
+    section: System Access
+    key: PasswordComplexity
+    value: 0
+
+# --- Service account for Responder bait ---
+- name: Create {{ responder_user }} user
+  ansible.windows.win_user:
+    name: "{{ responder_user }}"
+    password: "{{ responder_password }}"
+    state: present
+    groups:
+      - Users
+      - Administrators
+
+# --- SSH key access for admin/reset ---
+- name: Copy kali SSH public key to authorized_keys
+  ansible.windows.win_copy:
+    src: "/tmp/kali_id_rsa.pub"
+    dest: "C:\\ProgramData\\ssh\\administrators_authorized_keys"
+
+- name: Set permissions on authorized_keys
+  ansible.windows.win_command: 'icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"'
+
+# --- Disable Windows Defender (standalone, no AD/GPO) ---
+- name: Copy Defender disable script
+  ansible.windows.win_copy:
+    src: disable_defender.ps1
+    dest: C:\Windows\Temp\disable_defender.ps1
+
+- name: Run Defender disable script
+  ansible.windows.win_shell: "C:\\Windows\\Temp\\disable_defender.ps1"
+  args:
+    executable: powershell.exe
+
+# --- LLMNR bait scheduled task ---
+- name: Create scheduled task for LLMNR traffic
+  community.windows.win_scheduled_task:
+    name: BackupShare_Check
+    description: "Checks backup share availability"
+    actions:
+      - path: cmd.exe
+        arguments: '/c dir {{ responder_target_share }}'
+    triggers:
+      - type: registration
+        repetition:
+          interval: "PT{{ responder_interval_minutes }}M"
+    username: "{{ responder_user }}"
+    password: "{{ responder_password }}"
+    logon_type: password
+    run_level: limited
+    state: present
+    enabled: yes
