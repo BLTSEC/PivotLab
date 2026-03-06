@@ -1,7 +1,30 @@
 ---
 # Windows jump box role — provides Responder/LLMNR poisoning initial access
 
-# --- OpenSSH (reuse pattern from windows_target) ---
+# --- .NET 4.8 (required for Chocolatey 2.x) ---
+- name: Check if .NET 4.8 already installed
+  ansible.windows.win_reg_stat:
+    path: HKLM:\Software\Microsoft\NET Framework Setup\NDP\v4\Full
+    name: Release
+  register: dotnet48__release_registered
+
+- name: Download and Install Microsoft .NET Framework 4.8
+  block:
+    - name: Download .NET Framework 4.8 installer
+      ansible.windows.win_get_url:
+        url: "https://download.microsoft.com/download/f/3/a/f3a6af84-da23-40a5-8d1c-49cc10c8e76f/NDP48-x86-x64-AllOS-ENU.exe"
+        dest: "C:\\Windows\\Temp\\dotnet48.exe"
+    - name: Install .NET Framework 4.8
+      ansible.windows.win_command: "C:\\Windows\\Temp\\dotnet48.exe setup /passive /norestart /log C:\\Windows\\Temp\\dotnet_install.log"
+      register: result
+      failed_when: result.rc not in [0, 3010]
+    - name: Reboot the machine to complete .NET installation
+      ansible.windows.win_reboot:
+  when: (dotnet48__release_registered.raw_value is not defined or
+        (dotnet48__release_registered.raw_value is defined and
+         dotnet48__release_registered.raw_value < 528040))
+
+# --- OpenSSH ---
 - name: Install OpenSSH via Chocolatey
   chocolatey.chocolatey.win_chocolatey:
     name: openssh
